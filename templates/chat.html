@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}{{ room.name }} - Blazer Chat{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-lg-8 mx-auto">
+        <div class="card mb-3">
+            <div class="card-header">
+                <div class="d-flex flex-wrap justify-content-between align-items-center">
+                    <div class="mb-2 mb-md-0">
+                        <h3 class="mb-0"><i class="fas fa-comments me-2"></i>{{ room.name }}</h3>
+                    </div>
+                    <div class="d-flex flex-wrap">
+                        <span class="badge bg-secondary me-2 mb-1">
+                            <i class="fas fa-users me-1"></i> {{ room_members_count }} users
+                        </span>
+                        <a href="{{ url_for('rooms') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Back to Rooms
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-container">
+                <!-- Chat History -->
+                <div class="chat-history" id="chat-history" data-room-id="{{ room.id }}">
+                    {% for message in messages %}
+                        <div class="message" data-message-id="{{ message.id }}">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="username">{{ message.author.username }}</span>
+                                <span class="timestamp">{{ message.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                            </div>
+                            <div class="content">{{ message.content }}</div>
+                            <div class="message-reactions mt-1">
+                                <div class="reaction-counts" id="reaction-counts-{{ message.id }}">
+                                    {% if message.reactions %}
+                                        {% for reaction_type, count in message.reactions.items() %}
+                                            <span class="reaction-count" data-reaction="{{ reaction_type }}">
+                                                {% if reaction_type == 'like' %}👍{% endif %}
+                                                {% if reaction_type == 'heart' %}❤️{% endif %}
+                                                {% if reaction_type == 'laugh' %}😂{% endif %}
+                                                {% if reaction_type == 'wow' %}😮{% endif %}
+                                                {% if reaction_type == 'sad' %}😢{% endif %}
+                                                {% if reaction_type == 'angry' %}😠{% endif %}
+                                                {{ count }}
+                                            </span>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="reaction-buttons">
+                                    <button class="btn btn-sm reaction-btn {% if 'like' in message.user_reactions %}active{% endif %}" 
+                                            data-reaction="like" data-message-id="{{ message.id }}">👍</button>
+                                    <button class="btn btn-sm reaction-btn {% if 'heart' in message.user_reactions %}active{% endif %}" 
+                                            data-reaction="heart" data-message-id="{{ message.id }}">❤️</button>
+                                    <button class="btn btn-sm reaction-btn {% if 'laugh' in message.user_reactions %}active{% endif %}" 
+                                            data-reaction="laugh" data-message-id="{{ message.id }}">😂</button>
+                                    <button class="btn btn-sm reaction-btn {% if 'wow' in message.user_reactions %}active{% endif %}" 
+                                            data-reaction="wow" data-message-id="{{ message.id }}">😮</button>
+                                    <button class="btn btn-sm reaction-btn {% if 'sad' in message.user_reactions %}active{% endif %}" 
+                                            data-reaction="sad" data-message-id="{{ message.id }}">😢</button>
+                                    <button class="btn btn-sm reaction-btn {% if 'angry' in message.user_reactions %}active{% endif %}" 
+                                            data-reaction="angry" data-message-id="{{ message.id }}">😠</button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Typing Indicator -->
+                <div id="typing-indicator" class="system-message" style="display: none;">
+                    Someone is typing<span class="loading-dots"></span>
+                </div>
+                
+                <!-- Chat Input -->
+                <div class="chat-input">
+                    <form id="message-form">
+                        <div class="input-group">
+                            <input type="text" id="message" class="form-control" placeholder="Type your message..." autocomplete="off">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Room Info -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Room Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <p><strong>Room Name:</strong> {{ room.name }}</p>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <p><strong>Created By:</strong> {{ room.creator.username }}</p>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <p><strong>Created On:</strong> {{ room.created_at.strftime('%Y-%m-%d') }}</p>
+                    </div>
+                </div>
+                
+                <div class="mt-2">
+                    {% if current_user.id != room.created_by %}
+                        <form action="{{ url_for('leave_chat_room', room_id=room.id) }}" method="GET">
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="fas fa-sign-out-alt me-1"></i> Leave Room
+                            </button>
+                        </form>
+                    {% endif %}
+                    
+                    <div class="d-block d-md-none mt-3">
+                        <small class="text-muted">Tip: Rotate your device to landscape for a better chat experience on mobile.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}
